@@ -7,4 +7,5 @@ class SvgImages{
   static String twitter = 'images/twitter.svg';
   static String filter = 'images/filter.svg';
   static String search = 'images/search.svg';
+  // static String heart = 'images'
 }

@@ -1,163 +1,161 @@
-import 'package:ecommerce/appColors/appColors.dart';
-import 'package:ecommerce/screens/login_Screen.dart';
-import 'package:ecommerce/styles/signUp_screen_styles.dart';
+import 'package:email_validator/email_validator.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import '../../widgets/text_form_field_widgets.dart';
-import '../routes/routes.dart';
-import '../widgets/button_widget.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import '../../widgets/RoundButton.dart';
+import 'login_Screen.dart';
 
 class SignUpScreen extends StatefulWidget {
-  const SignUpScreen({Key? key}) : super(key: key);
+  const SignUpScreen({super.key});
 
   @override
   State<SignUpScreen> createState() => _SignUpScreenState();
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  final formKey = GlobalKey<FormState>();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  bool loading = false;
+
+  void validateEmail() {
+    final bool isValid =
+    EmailValidator.validate(emailController.text.toString());
+    if (isValid) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Valid Email'),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Not a Valid Email')));
+    }
+  }
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    super.dispose();
+    emailController.dispose();
+    passwordController.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SafeArea(
-        child: ListView(
-          children: [
-            buildTopPart(),
-            buildBottomPart(),
-          ],
+      body: Center(
+        child: Container(
+          margin: const EdgeInsets.all(20),
+          child: ListView(
+            children: [
+              Form(
+                  key: formKey,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      TextFormField(
+                        onTap: () {},
+                        keyboardType: TextInputType.emailAddress,
+                        controller: emailController,
+                        decoration: InputDecoration(
+                          hintText: 'Email',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(
+                              color: Colors.black,
+                            )
+                          ),
+                          helperText: 'enter email e.g jon@gmail.com',
+                          prefixIcon: Icon(Icons.alternate_email),
+                        ),
+                        validator: (value) {
+                          if (value!.isEmpty) {
+                            return 'Enter Email';
+                          }
+                        },
+                      ),
+                      const SizedBox(
+                        height: 10,
+                      ),
+                      TextFormField(
+                        onTap: () {},
+                        keyboardType: TextInputType.number,
+                        controller: passwordController,
+                        obscureText: true,
+                        decoration: InputDecoration(
+                          hintText: 'Password',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(
+                              color: Colors.black,
+                            ),
+                          ),
+                          prefixIcon: Icon(Icons.lock_open),
+                        ),
+                        validator: (value) {
+                          if (value!.isEmpty) {
+                            return 'Enter Password';
+                          }
+                          return null;
+                        },
+                      ),
+                    ],
+                  )),
+              const SizedBox(
+                height: 350,
+              ),
+              RoundButton(
+                  ontap: () async {
+                    validateEmail();
+                    if (formKey.currentState!.validate()) {
+                      signUp();
+                    }
+                  },
+                  text: 'SIGN UP', loading: loading),
+              const SizedBox(
+                height: 15,
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text('Already have an Account?'),
+                  TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const LoginScreen()));
+                      },
+                      child: const Text('Login'))
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget buildTopPart() {
-    return Column(
-      children: [
-        Image.asset('images/ecommerce_login.jpg',height: 150,),
-        textFormFieldWidgets("Full Name", false),
-        textFormFieldWidgets("Email", false),
-        textFormFieldWidgets("Password", true),
-        textFormFieldWidgets("Confirm Password", true),
-        Container(
-          width: MediaQuery.of(context).size.width,
-          margin: const EdgeInsets.symmetric(
-            horizontal: 20,
-            vertical: 10,
-          ),
-          // child:  const button_widget(text: 'Create an account', color: appColors.baseDarkPinkColor,
-          // ontap: onpress,),
-        ),
-        RichText(
-          text: const TextSpan(
-            text: 'By signing up you agrees to our\n',
-              style: signUp_screen_styles.signUpStyle,
-              children: [
-              TextSpan(
-                text: 'Terms',
-                style: signUp_screen_styles.termsTextStyle,
-              ),
-                TextSpan(
-                  text: ' and ',
-                  style: signUp_screen_styles.andTextStyle,
-                ),
-                TextSpan(
-                  text: 'Conditions of Use',
-                  style: signUp_screen_styles.termsTextStyle,
-                ),
-            ]
-          ),
+  void signUp() {
+    setState(() {
+      loading = true;
+    });
+    _auth.createUserWithEmailAndPassword(
+        email: emailController.text.toString(),
+        password: passwordController.text.toString()).then((value){
+      setState(() {
+        loading = false;
 
-        ),
-        Row(
-          children: [
-            btnWidget(context: context, clr: appColors.baseBlackColor, txt: 'SIGN IN', fn:()=> PageRouting().goToNextPage(context, LoginScreen())),
-            btnWidget(context: context, clr: appColors.baseDarkPinkColor, txt: 'SIGN UP', fn:()=> PageRouting().goToNextPage(context, SignUpScreen())),
-          ],
-        ),
-      ],
-    );
-  }
-  Widget buildBottomPart(){
-    return SizedBox(
-      height: 300,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          const Text('or sign in with social networks',style: signUp_screen_styles.signInSocialStyle,),
-          const SizedBox(
-            height: 10,
-          ),
-          Padding(
-            padding: const EdgeInsets.only(top: 20,right: 40,left: 40,),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                    width: 90,
-                    height: 55,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(6),
-                      color: Colors.white,
-                      image: const DecorationImage(
-                        image: AssetImage('images/facebook.jpeg'),
-                        fit: BoxFit.fill,
-                      ),
-                    )
-                ),
-                Container(
-                    width: 90,
-                    height: 55,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(6),
-                      color: Colors.white,
-                      image: const DecorationImage(
-                        image: AssetImage('images/google.jpeg'),
-                        fit: BoxFit.fill,
-                      ),
-                    )
-                ),
-                Container(
-                    width: 90,
-                    height: 55,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(6),
-                      color: Colors.white,
-                      image: const DecorationImage(
-                        image: AssetImage('images/twitter.png'),
-                        fit: BoxFit.fill,
-                      ),
-                    )
-                ),
-
-
-                // ElevatedButton(
-                //     onPressed: () {},
-                //     style: ElevatedButton.styleFrom(
-                //       shape: RoundedRectangleBorder(
-                //         side: BorderSide(
-                //           width: 0.5,
-                //           color: appColors.baseGrey40Color,
-                //         ),
-                //         borderRadius: BorderRadius.circular(5),
-                //       ),
-                //     ),
-                //     child: Text(''))
-              ],
-            ),
-          ),
-          const SizedBox(
-            height: 30,
-          ),
-          Container(
-            margin: const EdgeInsets.all(20),
-            child: const Text('Sign up',style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),),
-          ),
-         ]
-          ),);
-
-
-
+      });
+    }).onError((error, stackTrace){
+      Fluttertoast.showToast(msg: error.toString());
+      setState(() {
+        loading = false;
+      });
+    });
   }
 }

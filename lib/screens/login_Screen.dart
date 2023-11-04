@@ -1,139 +1,176 @@
-
-import 'package:ecommerce/appColors/appColors.dart';
-import 'package:ecommerce/routes/routes.dart';
 import 'package:ecommerce/screens/signUpScreen.dart';
-import 'package:ecommerce/styles/login_screen_styles.dart';
-import 'package:ecommerce/widgets/button_widget.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
-import '../../widgets/text_form_field_widgets.dart';
-import 'homepage.dart';
+import 'package:flutter/services.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import '../widgets/roundButton.dart';
+import 'bottom_navigation_bar.dart';
+import 'login_with_phone_number.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+  const LoginScreen({super.key});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final formKey = GlobalKey<FormState>();
+  bool loading = false;
+
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Center(
-          child: ListView(
-            physics: const BouncingScrollPhysics(),
-            children: [
-              buildTopPart(),
-              buildBottomPart(),
-            ],
-          ),
-        ),
-      ),
-    );
+  void dispose() {
+    // TODO: implement dispose
+    super.dispose();
+    emailController.dispose();
+    passwordController.dispose();
   }
 
-  Widget buildTopPart() {
-    return Column(
-      children: [
-        Image.asset(
-          'images/ecommerce_login.jpg',
-          height: 150,
-        ),
-        Container(
-          margin: const EdgeInsets.only(top: 10, right: 20, left: 15, bottom: 10),
-          child: Column(
+  @override
+  Widget build(BuildContext context) {
+    return WillPopScope(
+      onWillPop: () async {
+        SystemNavigator.pop();
+        return true;
+      },
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: Container(
+          margin: const EdgeInsets.all(20),
+          child: ListView(
             children: [
-              textFormFieldWidgets('E-mail', false),
-              textFormFieldWidgets('Password', true),
+              Form(
+                  key: formKey,
+                  child: Column(
+                    children: [
+                      Image.asset(
+                        'images/ecommerce_login.jpg',
+                        height: 220,
+                      ),
+                      TextFormField(
+                        onTap: () {},
+                        keyboardType: TextInputType.emailAddress,
+                        controller: emailController,
+                        decoration: InputDecoration(
+                            hintText: 'Email',
+                            helperText: 'enter email e.g jon@gmail.com',
+                            prefixIcon: const Icon(Icons.alternate_email),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(
+                                color: Colors.black,
+                              ),
+                            )),
+                        validator: (value) {
+                          if (value!.isEmpty) {
+                            return 'Enter Email';
+                          }
+                        },
+                      ),
+                      const SizedBox(
+                        height: 10,
+                      ),
+                      TextFormField(
+                        onTap: () {},
+                        keyboardType: TextInputType.number,
+                        controller: passwordController,
+                        obscureText: true,
+                        decoration: InputDecoration(
+                          hintText: 'Password',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: const BorderSide(
+                              color: Colors.black,
+                            ),
+                          ),
+                          prefixIcon: const Icon(Icons.lock_open),
+                        ),
+                        validator: (value) {
+                          if (value!.isEmpty) {
+                            return 'Enter Password';
+                          }
+                          return null;
+                        },
+                      ),
+                    ],
+                  )),
+              const SizedBox(
+                height: 50,
+              ),
+              RoundButton(
+                  loading: loading,
+                  ontap: () {
+                    if (formKey.currentState!.validate()) {
+                      login();
+                    }
+                  },
+                  text: 'LOGIN'),
+              const SizedBox(
+                height: 20,
+              ),
               Row(
-
-                children:  [
-                   btnWidget(context: context, clr: appColors.baseBlackColor, txt: 'SIGN IN', fn:()=> PageRouting().goToNextPage(context, HomePage())),
-                  btnWidget(context: context, clr: appColors.baseDarkPinkColor, txt: 'SIGN UP', fn:()=> PageRouting().goToNextPage(context, SignUpScreen())),
-
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text('Don\'t have an Account?'),
+                  TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const SignUpScreen()));
+                      },
+                      child: const Text('Sign up'))
                 ],
               ),
               const SizedBox(
                 height: 20,
               ),
-              const Text(
-                'Forget Password?',
-                style: login_screen_styles.forgotPasswordStyles,
+              InkWell(
+                onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginWithPhoneNUmber()));
+                },
+                child: Container(
+                  height: 50,
+                  decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(50),
+                      border: Border.all(
+                        color: Colors.black,
+                      )),
+                  child: const Center(
+                    child: Text('Login with Phone Number'),
+                  ),
+                ),
               ),
             ],
           ),
-        )
-      ],
-    );
-  }
-
-  Widget buildBottomPart() {
-    return SizedBox(
-      height: 300,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Text(
-            'or sign in with social networks',
-            style: login_screen_styles.signInSocialStyles,
-          ),
-          const SizedBox(
-            height: 5,
-          ),
-          Padding(
-            padding: const EdgeInsets.only(top: 20, right: 40, left: 40, bottom: 20),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  height: 60,
-                  width: 90,
-                  child: ElevatedButton(
-                      onPressed: (){},
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                    ),child: SvgPicture.asset('images/fb.svg',fit: BoxFit.cover),
-                  ),
-                ),
-                Container(
-                    height: 60,
-                    width: 90,
-                    child: ElevatedButton(onPressed: (){},
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                        ),
-                        child: SvgPicture.asset('images/google.svg',fit: BoxFit.fill,))),
-                Container(
-                  height: 60,
-                  width: 90,
-                  child: ElevatedButton(onPressed: (){},
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0XFF00bfff),
-                    ),
-                    child: SvgPicture.asset('images/twitter.svg',fit: BoxFit.cover,),),
-                ),
-
-
-              ],
-            ),
-          ),
-          const SizedBox(
-            height: 30,
-          ),
-          const Text(
-            'Sign up',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 
-
+  void login() {
+    setState(() {
+      loading = true;
+    });
+    _auth
+        .signInWithEmailAndPassword(
+            email: emailController.text.toString(),
+            password: passwordController.text.toString())
+        .then((value) {
+      Fluttertoast.showToast(msg: value.user!.email.toString());
+      setState(() {
+        loading = false;
+      });
+      Navigator.push(context, MaterialPageRoute(builder: (context) => const BottomNavigationBarWidget()));
+    }).onError((error, stackTrace) {
+      setState(() {
+        loading = false;
+      });
+      Fluttertoast.showToast(msg: error.toString());
+      print('Usama ka error  $error');
+    });
+  }
 }
